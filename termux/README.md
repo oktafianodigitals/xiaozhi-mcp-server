@@ -24,14 +24,14 @@ XiaoZhi cloud mengirim request `tools/list` / `tools/call` lewat koneksi yang sa
 ### Linux / macOS / Termux
 ```bash
 git clone https://github.com/oktafianodigitals/xiaozhi-mcp-server.git
-cd xiaozhi-mcp-console
+cd termux
 chmod +x start.sh && ./start.sh
 ```
 
 ### Windows
 Double-click **`start.bat`** atau dari CMD:
 ```
-cd xiaozhi-mcp-console
+cd desktop
 start.bat
 ```
 
