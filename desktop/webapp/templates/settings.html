@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Settings — xiaozhi-mcp-console{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Settings</h1>
+  <p class="page-subtitle">Semua nilai disimpan ke config/settings.json. API key dan token di-mask saat ditampilkan — kosongkan kolom password kalau tidak ingin mengubah nilai yang tersimpan.</p>
+</div>
+
+<div class="banner" id="settings-restart-banner" style="display:{{ 'flex' if restart_required else 'none' }}">
+  <span>⚠️ Setting jaringan baru disimpan tapi belum aktif.</span>
+  <button class="btn btn-warn btn-sm" id="btn-restart" type="button">Restart listener sekarang</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. XIAOZHI CLOUD CONNECTION  ← bagian paling penting
+     ═══════════════════════════════════════════════════════════ -->
+<form id="form-xiaozhi" class="card card-highlight">
+  <div class="card-title">☁️ XiaoZhi Cloud — MCP Endpoint</div>
+  <div class="card-desc">
+    Server ini akan <strong>dial keluar</strong> ke URL di bawah dan mempertahankan koneksi WSS permanen.
+    XiaoZhi cloud mengirim request <code>tools/list</code> dan <code>tools/call</code> lewat koneksi ini.
+    Token JWT bisa diperbarui kapan saja tanpa restart — koneksi akan reconnect otomatis.
+  </div>
+
+  <!-- Status koneksi live di dalam form -->
+  <div class="conn-inline-status" id="settings-conn-status">
+    <span class="pill" id="settings-conn-pill"><span class="pill-dot"></span><span id="settings-conn-text">Memuat…</span></span>
+    <span class="conn-detail-value mono" id="settings-conn-url" style="font-size:11px;color:var(--text-faint)"></span>
+    <button type="button" class="btn btn-sm" id="settings-reconnect-btn">⟳ Reconnect</button>
+  </div>
+
+  <div class="field-group" style="margin-top:12px">
+    <label class="field-label">Base URL (tanpa token)</label>
+    <input type="text" data-path="xiaozhi.wss_base_url"
+           value="{{ cfg.xiaozhi.wss_base_url }}"
+           placeholder="wss://api.xiaozhi.me/mcp/">
+    <div class="field-hint">URL standar XiaoZhi tidak perlu diubah. Token ditambahkan otomatis sebagai query parameter <code>?token=...</code></div>
+  </div>
+
+  <div class="field-group">
+    <label class="field-label">Token JWT (dari console XiaoZhi → Settings → MCP Endpoint)</label>
+    <div style="position:relative">
+      <input type="password" id="token-input" data-path="xiaozhi.token"
+             placeholder="{{ cfg.xiaozhi.token or 'Belum diatur — paste token JWT dari console XiaoZhi' }}"
+             style="padding-right:80px">
+      <button type="button" class="btn btn-sm" id="btn-toggle-token"
+              style="position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:4px 10px">
+        Lihat
+      </button>
+    </div>
+    <div class="field-hint">
+      Token biasanya berformat <code>eyJhbG...</code> (JWT). Berlaku sampai tanggal exp di dalamnya.
+      Kalau expired, perbarui token di sini dan klik Simpan — koneksi akan reconnect otomatis tanpa restart server.
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field-group">
+      <div class="checkbox-row">
+        <input type="checkbox" id="xiaozhi_enabled" data-path="xiaozhi.enabled"
+               {% if cfg.xiaozhi.enabled %}checked{% endif %}>
+        <label for="xiaozhi_enabled">Aktifkan koneksi ke XiaoZhi cloud</label>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="checkbox-row">
+        <input type="checkbox" id="xiaozhi_reconnect" data-path="xiaozhi.reconnect_enabled"
+               {% if cfg.xiaozhi.reconnect_enabled %}checked{% endif %}>
+        <label for="xiaozhi_reconnect">Auto-reconnect saat koneksi putus</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field-group">
+      <label class="field-label">Delay reconnect awal (detik)</label>
+      <input type="number" data-path="xiaozhi.reconnect_delay_initial_s"
+             value="{{ cfg.xiaozhi.reconnect_delay_initial_s }}" min="1" max="30">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Delay reconnect maksimum (detik)</label>
+      <input type="number" data-path="xiaozhi.reconnect_delay_max_s"
+             value="{{ cfg.xiaozhi.reconnect_delay_max_s }}" min="10" max="300">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Ping interval (detik)</label>
+      <input type="number" data-path="xiaozhi.ping_interval_s"
+             value="{{ cfg.xiaozhi.ping_interval_s }}" min="10" max="60">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button type="submit" class="btn btn-primary">Simpan &amp; Reconnect</button>
+    <span class="field-hint" style="margin:0">Koneksi reconnect otomatis setelah simpan</span>
+  </div>
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. DASHBOARD & INBOUND MCP
+     ═══════════════════════════════════════════════════════════ -->
+<form id="form-network" class="card" data-network-form="true">
+  <div class="card-title">Jaringan — Dashboard &amp; Inbound MCP</div>
+  <div class="card-desc">
+    Dashboard (UI ini) selalu berjalan di port terpisah. Inbound MCP server adalah listener lokal/LAN
+    <em>opsional</em> — untuk pemakaian normal cukup matikan dan andalkan koneksi XiaoZhi di atas.
+  </div>
+
+  <div class="field-row">
+    <div class="field-group">
+      <label class="field-label">Dashboard host</label>
+      <input type="text" data-path="network.dashboard_host" value="{{ cfg.network.dashboard_host }}">
+      <div class="field-hint">127.0.0.1 = lokal saja</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Dashboard port</label>
+      <input type="number" data-path="network.dashboard_port" value="{{ cfg.network.dashboard_port }}">
+    </div>
+  </div>
+
+  <div class="field-group" style="margin-top:6px">
+    <div class="checkbox-row">
+      <input type="checkbox" id="inbound_enabled" data-path="network.inbound_mcp_enabled"
+             {% if cfg.network.inbound_mcp_enabled %}checked{% endif %}>
+      <label for="inbound_enabled">Aktifkan MCP inbound server (untuk koneksi lokal/LAN)</label>
+    </div>
+  </div>
+
+  <div class="field-row" style="margin-top:6px">
+    <div class="field-group">
+      <label class="field-label">Inbound host</label>
+      <input type="text" data-path="network.inbound_mcp_host" value="{{ cfg.network.inbound_mcp_host }}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Inbound port</label>
+      <input type="number" data-path="network.inbound_mcp_port" value="{{ cfg.network.inbound_mcp_port }}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">WS path</label>
+      <input type="text" data-path="network.inbound_mcp_ws_path" value="{{ cfg.network.inbound_mcp_ws_path }}">
+    </div>
+  </div>
+
+  <div class="field-group checkbox-row">
+    <input type="checkbox" id="use_tls" data-path="network.use_tls"
+           {% if cfg.network.use_tls %}checked{% endif %}>
+    <label for="use_tls">TLS (wss://) pada inbound server</label>
+  </div>
+  <div class="field-row">
+    <div class="field-group">
+      <label class="field-label">TLS cert (.pem)</label>
+      <input type="text" data-path="network.tls_cert_path" value="{{ cfg.network.tls_cert_path }}" placeholder="/path/ke/fullchain.pem">
+    </div>
+    <div class="field-group">
+      <label class="field-label">TLS key (.pem)</label>
+      <input type="text" data-path="network.tls_key_path" value="{{ cfg.network.tls_key_path }}" placeholder="/path/ke/privkey.pem">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button type="submit" class="btn btn-primary">Simpan setting jaringan</button>
+  </div>
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. API KEYS
+     ═══════════════════════════════════════════════════════════ -->
+<form id="form-api-keys" class="card">
+  <div class="card-title">API Keys — Tools</div>
+  <div class="card-desc">weather, wiki, dan currency sudah jalan tanpa API key (provider keyless). Sisanya perlu key di bawah.</div>
+
+  <div class="field-group">
+    <label class="field-label">Web Search — Brave Search API key</label>
+    <input type="password" data-path="api_keys.web_search.api_key"
+           placeholder="{{ cfg.api_keys.web_search.api_key or 'belum diatur' }}">
+    <div class="field-hint">Daftar gratis di brave.com/search/api</div>
+  </div>
+  <div class="field-group">
+    <label class="field-label">News — NewsAPI.org key</label>
+    <input type="password" data-path="api_keys.news.api_key"
+           placeholder="{{ cfg.api_keys.news.api_key or 'belum diatur' }}">
+  </div>
+  <div class="field-group">
+    <label class="field-label">YouTube Data API v3 key</label>
+    <input type="password" data-path="api_keys.youtube.api_key"
+           placeholder="{{ cfg.api_keys.youtube.api_key or 'belum diatur' }}">
+    <div class="field-hint">Dari Google Cloud Console → Enable YouTube Data API v3</div>
+  </div>
+  <div class="field-row">
+    <div class="field-group">
+      <label class="field-label">Translate — LibreTranslate endpoint</label>
+      <input type="text" data-path="api_keys.translate.endpoint" value="{{ cfg.api_keys.translate.endpoint }}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Translate — API key (opsional)</label>
+      <input type="password" data-path="api_keys.translate.api_key"
+             placeholder="{{ cfg.api_keys.translate.api_key or 'opsional' }}">
+    </div>
+  </div>
+  <div class="btn-row">
+    <button type="submit" class="btn btn-primary">Simpan API keys</button>
+  </div>
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. BROWSER (BRAVE) — dipakai youtube.play_music / play_video
+     ═══════════════════════════════════════════════════════════ -->
+<form id="form-browser" class="card">
+  <div class="card-title">Browser — Brave</div>
+  <div class="card-desc">
+    Dipakai oleh <code>youtube.play_music</code> dan <code>youtube.play_video</code> untuk membuka
+    video di Brave secara lokal. Biasanya <strong>tidak perlu diisi</strong> — server akan mencoba
+    mendeteksi lokasi instalasi Brave secara otomatis. Isi path di bawah hanya kalau deteksi otomatis gagal
+    (instalasi Brave di lokasi non-standar).
+  </div>
+
+  <div class="field-group">
+    <label class="field-label">Path manual ke brave.exe (opsional)</label>
+    <input type="text" data-path="browser.brave_path" id="brave-path-input"
+           value="{{ cfg.browser.brave_path }}"
+           placeholder="contoh: D:\Apps\BraveSoftware\Brave-Browser\Application\brave.exe">
+    <div class="field-hint">Kosongkan untuk auto-detect. Klik "Test deteksi" untuk memastikan Brave ditemukan.</div>
+  </div>
+
+  <div class="btn-row">
+    <button type="submit" class="btn btn-primary">Simpan path Brave</button>
+    <button type="button" class="btn btn-sm" id="btn-test-browser">Test deteksi</button>
+    <span class="field-hint" id="browser-test-result" style="margin:0"></span>
+  </div>
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. TELEGRAM
+     ═══════════════════════════════════════════════════════════ -->
+<form id="form-telegram" class="card">
+  <div class="card-title">Telegram Bot</div>
+  <div class="card-desc">Dipakai oleh tool telegram.send_message dan opsional sebagai bot notifikasi status.</div>
+
+  <div class="field-row">
+    <div class="field-group">
+      <label class="field-label">Bot token (dari @BotFather)</label>
+      <input type="password" data-path="telegram.bot_token"
+             placeholder="{{ cfg.telegram.bot_token or 'belum diatur' }}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Default chat ID</label>
+      <input type="text" data-path="telegram.default_chat_id"
+             value="{{ cfg.telegram.default_chat_id }}" placeholder="contoh: 123456789">
+    </div>
+  </div>
+  <div class="field-group checkbox-row">
+    <input type="checkbox" id="bot_enabled" data-path="telegram.bot_enabled"
+           {% if cfg.telegram.bot_enabled %}checked{% endif %}>
+    <label for="bot_enabled">Aktifkan bot (balas /status &amp; /help) — langsung berlaku</label>
+  </div>
+  <div class="field-group checkbox-row">
+    <input type="checkbox" id="notify_on_start" data-path="telegram.notify_on_start"
+           {% if cfg.telegram.notify_on_start %}checked{% endif %}>
+    <label for="notify_on_start">Kirim notifikasi setiap server start</label>
+  </div>
+  <div class="btn-row">
+    <button type="submit" class="btn btn-primary">Simpan setting Telegram</button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+// Token visibility toggle
+const tokenInput = document.getElementById("token-input");
+const toggleBtn = document.getElementById("btn-toggle-token");
+if (toggleBtn && tokenInput) {
+  toggleBtn.addEventListener("click", () => {
+    const isPassword = tokenInput.type === "password";
+    tokenInput.type = isPassword ? "text" : "password";
+    toggleBtn.textContent = isPassword ? "Sembunyikan" : "Lihat";
+  });
+}
+
+// Reconnect button di settings form
+const settingsReconnectBtn = document.getElementById("settings-reconnect-btn");
+if (settingsReconnectBtn) {
+  settingsReconnectBtn.addEventListener("click", async () => {
+    try {
+      await apiPost("/api/xiaozhi/reconnect", {});
+      showToast("Force reconnect dikirim", "ok");
+    } catch (err) { showToast("Gagal: " + err.message, "err"); }
+  });
+}
+
+// Restart listener button
+const restartBtn = document.getElementById("btn-restart");
+if (restartBtn) {
+  restartBtn.addEventListener("click", async () => {
+    if (!confirm("Restart listener sekarang?")) return;
+    await apiPost("/api/restart", {});
+    showToast("Restart diminta", "ok");
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Logs — xiaozhi-mcp-console{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Logs</h1>
+  <p class="page-subtitle">500 baris log terakhir dari proses ini. Untuk riwayat lebih lama, lihat file logs/app.log.</p>
+</div>
+
+<div class="card">
+  <div class="toolbar">
+    <select id="log-level-filter">
+      <option value="">Semua level</option>
+      <option value="INFO">INFO</option>
+      <option value="WARNING">WARNING</option>
+      <option value="ERROR">ERROR</option>
+    </select>
+  </div>
+  <div id="logs-body"><div class="empty-state">Memuat…</div></div>
+</div>
+{% endblock %}

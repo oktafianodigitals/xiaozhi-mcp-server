@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Status — xiaozhi-mcp-console{% endblock %}
+
+{% block content %}
+<div id="status-page">
+  <div class="page-header">
+    <h1 class="page-title">Status</h1>
+    <p class="page-subtitle">Status real-time — diperbarui otomatis setiap 4 detik.</p>
+  </div>
+
+  <div class="banner" id="restart-banner" style="display:none">
+    ⚠️ Ada perubahan setting jaringan yang belum diterapkan.
+    <button class="btn btn-warn btn-sm" id="btn-restart" type="button">Restart listener sekarang</button>
+  </div>
+
+  <!-- XiaoZhi Connection Card (utama) -->
+  <div class="card conn-card" id="xiaozhi-conn-card">
+    <div class="conn-card-header">
+      <div>
+        <div class="card-title">Koneksi XiaoZhi Cloud</div>
+        <div class="card-desc">Koneksi outbound WSS ke backend cloud XiaoZhi (MCP endpoint)</div>
+      </div>
+      <div class="conn-card-actions">
+        <button class="btn btn-sm" id="btn-reconnect" type="button">⟳ Reconnect</button>
+        <span class="pill" id="conn-status-pill"><span class="pill-dot"></span><span id="conn-status-text">—</span></span>
+      </div>
+    </div>
+
+    <div class="conn-detail-grid">
+      <div class="conn-detail">
+        <div class="conn-detail-label">URL Endpoint</div>
+        <div class="conn-detail-value mono" id="conn-url">—</div>
+      </div>
+      <div class="conn-detail">
+        <div class="conn-detail-label">Terhubung sejak</div>
+        <div class="conn-detail-value" id="conn-since">—</div>
+      </div>
+      <div class="conn-detail">
+        <div class="conn-detail-label">Method terakhir</div>
+        <div class="conn-detail-value mono" id="conn-last-method">—</div>
+      </div>
+      <div class="conn-detail">
+        <div class="conn-detail-label">Pesan diterima</div>
+        <div class="conn-detail-value" id="conn-messages">—</div>
+      </div>
+      <div class="conn-detail" id="conn-error-row" style="display:none">
+        <div class="conn-detail-label">Error terakhir</div>
+        <div class="conn-detail-value err" id="conn-error">—</div>
+      </div>
+      <div class="conn-detail" id="conn-reconnect-row" style="display:none">
+        <div class="conn-detail-label">Reconnect ke-</div>
+        <div class="conn-detail-value" id="conn-reconnect-info">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stat grid -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value" id="stat-uptime">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tool Calls</div>
+      <div class="stat-value ok" id="stat-calls">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tool Errors</div>
+      <div class="stat-value" id="stat-errors">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tools Aktif</div>
+      <div class="stat-value ok" id="stat-tools">—</div>
+    </div>
+  </div>
+
+  <!-- Recent tool calls -->
+  <div class="card">
+    <div class="card-title">Riwayat Tool Call Terbaru</div>
+    <div class="card-desc">50 panggilan terakhir, terbaru di atas.</div>
+    <div id="calls-body"><div class="empty-state">Memuat…</div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Reconnect button on status page
+const reconnectBtn = document.getElementById("btn-reconnect");
+if (reconnectBtn) {
+  reconnectBtn.addEventListener("click", async () => {
+    try {
+      await apiPost("/api/xiaozhi/reconnect", {});
+      showToast("Force reconnect dikirim — lihat status dalam beberapa detik", "ok");
+    } catch (err) {
+      showToast("Gagal: " + err.message, "err");
+    }
+  });
+}
+const restartBtn = document.getElementById("btn-restart");
+if (restartBtn) {
+  restartBtn.addEventListener("click", async () => {
+    if (!confirm("Restart listener dashboard sekarang?")) return;
+    try {
+      await apiPost("/api/restart", {});
+      showToast("Restart diminta", "ok");
+    } catch(err) { showToast("Gagal: " + err.message, "err"); }
+  });
+}
+</script>
+{% endblock %}

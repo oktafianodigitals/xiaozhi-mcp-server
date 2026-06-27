@@ -1,0 +1,38 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Config berisi API key — JANGAN dicommit ke repo publik!
+config/settings.json
+
+# Logs (bisa besar)
+logs/*.log
+logs/*.log.*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+.env
+*.env
+
+# Temporary
+*.tmp
+*.bak
+nohup.out

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}xiaozhi-mcp-console{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-text">MCP Console</div>
+          <div class="brand-sub">xiaozhi-bridge v{{ app_version }}</div>
+        </div>
+      </div>
+
+      <a class="nav-item {% if active_page == 'status' %}active{% endif %}" href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+        Status
+      </a>
+      <a class="nav-item {% if active_page == 'settings' %}active{% endif %}" href="/settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a7.97 7.97 0 0 0 0-6l1.6-1.2-2-3.4-1.9.7a8 8 0 0 0-2.7-1.6L14 1h-4l-.4 2.5a8 8 0 0 0-2.7 1.6l-1.9-.7-2 3.4L4.6 9a7.97 7.97 0 0 0 0 6l-1.6 1.2 2 3.4 1.9-.7a8 8 0 0 0 2.7 1.6L10 23h4l.4-2.5a8 8 0 0 0 2.7-1.6l1.9.7 2-3.4z"/></svg>
+        Settings
+      </a>
+      <a class="nav-item {% if active_page == 'tools' %}active{% endif %}" href="/tools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a6 6 0 0 1-7.6 7.6L7.1 19.9a2 2 0 1 1-2.8-2.8L10.5 11A6 6 0 0 1 18 3.4z"/></svg>
+        Tools
+      </a>
+      <a class="nav-item {% if active_page == 'logs' %}active{% endif %}" href="/logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a1 1 0 0 1 1-1h11l4 4v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+        Logs
+      </a>
+
+      <!-- Koneksi XiaoZhi di sidebar (live) -->
+      <div class="sidebar-conn-badge" id="sidebar-conn-badge">
+        <span class="pill-dot" id="sidebar-conn-dot" style="background:var(--text-faint)"></span>
+        <span id="sidebar-conn-label">XiaoZhi: —</span>
+      </div>
+
+      <div class="sidebar-footer">localhost dashboard</div>
+    </aside>
+
+    <main class="main">
+      <!-- Signal strip: Cloud XiaoZhi ←──→ MCP Console ←──→ Tools -->
+      <div class="signal-strip" id="signal-strip">
+        <div class="signal-node" id="node-cloud">
+          <div class="signal-node-dot"></div>
+          <div class="signal-node-label">XiaoZhi Cloud</div>
+          <div class="signal-node-value" id="node-cloud-status">—</div>
+          <div class="signal-node-sub" id="node-cloud-sub"></div>
+        </div>
+
+        <div class="signal-wave" id="wave-left">
+          <svg viewBox="0 0 200 26" preserveAspectRatio="none">
+            <path d="M0 13 Q 25 2, 50 13 T 100 13 T 150 13 T 200 13"/>
+          </svg>
+        </div>
+
+        <div class="signal-node live" id="node-console">
+          <div class="signal-node-dot"></div>
+          <div class="signal-node-label">MCP Console</div>
+          <div class="signal-node-value" id="node-console-value">online</div>
+          <div class="signal-node-sub" id="node-console-sub"></div>
+        </div>
+
+        <div class="signal-wave" id="wave-right">
+          <svg viewBox="0 0 200 26" preserveAspectRatio="none">
+            <path d="M0 13 Q 25 2, 50 13 T 100 13 T 150 13 T 200 13"/>
+          </svg>
+        </div>
+
+        <div class="signal-node" id="node-tools">
+          <div class="signal-node-dot"></div>
+          <div class="signal-node-label">Tools Aktif</div>
+          <div class="signal-node-value" id="node-tools-value">—</div>
+          <div class="signal-node-sub" id="node-tools-sub"></div>
+        </div>
+      </div>
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="/static/js/dashboard.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
