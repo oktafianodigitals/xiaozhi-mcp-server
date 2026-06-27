@@ -23,7 +23,7 @@ XiaoZhi cloud mengirim request `tools/list` / `tools/call` lewat koneksi yang sa
 
 ### Linux / macOS / Termux
 ```bash
-git clone https://github.com/ANDA/xiaozhi-mcp-console
+git clone https://github.com/oktafianodigitals/xiaozhi-mcp-server.git
 cd xiaozhi-mcp-console
 chmod +x start.sh && ./start.sh
 ```
