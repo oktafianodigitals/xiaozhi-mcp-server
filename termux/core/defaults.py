@@ -5,7 +5,7 @@ core/defaults.py  — skema konfigurasi default.
 DEFAULT_CONFIG = {
     "meta": {
         "server_name": "xiaozhi-mcp-console",
-        "version": "1.2.0",
+        "version": "1.2.1",
     },
 
     # ── Koneksi keluar ke cloud XiaoZhi ──────────────────────────────────

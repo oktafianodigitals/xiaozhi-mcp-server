@@ -33,6 +33,11 @@ def client(**kwargs) -> httpx.AsyncClient:
     caller_headers = kwargs.pop("headers", {})
     merged_headers = {**DEFAULT_HEADERS, **caller_headers}
     kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
+    # Beberapa provider publik (termasuk Frankfurter, yang migrasi domain dari
+    # .app ke .dev pertengahan 2026) pakai 301/302 saat pindah domain/path.
+    # follow_redirects=True supaya tool tidak gagal total tiap kali provider
+    # migrasi URL — caller masih bisa override kalau memang perlu redirect mentah.
+    kwargs.setdefault("follow_redirects", True)
     return httpx.AsyncClient(headers=merged_headers, **kwargs)
 
 

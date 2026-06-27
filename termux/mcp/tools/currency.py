@@ -5,6 +5,10 @@ currency.convert — pakai Frankfurter API (data ECB), tidak butuh API key.
 Catatan: Frankfurter tidak punya data IDR setiap hari di semua kasus, tapi
 umumnya tersedia untuk mata uang utama. Kalau provider ini tidak punya
 pasangan mata uang yang diminta, error akan menyebutkan dengan jelas.
+
+Frankfurter migrasi domain dari api.frankfurter.app ke api.frankfurter.dev
+(v1) pertengahan 2026 — URL lama masih hidup tapi 301 redirect permanen ke
+domain baru, jadi kita pakai domain baru langsung di sini.
 """
 
 from __future__ import annotations
@@ -12,7 +16,7 @@ from __future__ import annotations
 from mcp.server import registry
 from mcp.tools._http import client
 
-FRANKFURTER_URL = "https://api.frankfurter.app/latest"
+FRANKFURTER_URL = "https://api.frankfurter.dev/v1/latest"  # migrasi dari .app per pertengahan 2026
 
 
 async def convert(arguments: dict) -> dict:
