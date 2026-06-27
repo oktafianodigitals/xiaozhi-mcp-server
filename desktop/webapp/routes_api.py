@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from core.config import config
 from core.logger import ring_handler
+from core.netinfo import detect_lan_ip
 from core.state import state
 from integrations import telegram_bot, xiaozhi_client
 from mcp.server import registry
@@ -44,6 +45,7 @@ async def get_status():
         "tools_enabled_count": enabled_count,
         "recent_calls": list(state.call_history)[-50:],
         "network": config.get("network", default={}),
+        "lan_ip": detect_lan_ip(),
         "restart_required": state.restart_requested,
     }
 

@@ -3,7 +3,10 @@ main.py
 
 Entrypoint utama. Menjalankan:
   1. XiaozhiClient (outbound WSS ke cloud XiaoZhi) — koneksi UTAMA
-  2. Dashboard (UI manajemen + REST API) — selalu localhost
+  2. Dashboard (UI manajemen + REST API) — default dengar di semua
+     interface (0.0.0.0) supaya bisa diakses dari device lain di LAN;
+     bisa dikunci ke "127.0.0.1" lewat Settings kalau mau localhost-only.
+     CATATAN: dashboard ini tidak punya autentikasi sama sekali.
   3. MCP inbound server (opsional, untuk koneksi lokal/LAN) — jika diaktifkan
 
 Supervisor loop: kalau network settings berubah via dashboard, listener
@@ -22,6 +25,7 @@ import uvicorn
 
 from core.config import config
 from core.logger import get_logger, setup_logging
+from core.netinfo import detect_lan_ip
 from core.state import state
 from integrations import telegram_bot, xiaozhi_client
 from mcp.tools import setup_all_tools
@@ -105,6 +109,24 @@ async def _serve_forever() -> None:
             state.mcp_server = None
 
         logger.info("Dashboard: http://%s:%s", net["dashboard_host"], net["dashboard_port"])
+        if net["dashboard_host"] in ("0.0.0.0", "::"):
+            lan_ip = detect_lan_ip()
+            if lan_ip:
+                logger.info(
+                    "  → bisa diakses dari device lain di jaringan yang sama: http://%s:%s",
+                    lan_ip, net["dashboard_port"],
+                )
+            else:
+                logger.warning(
+                    "  → IP LAN tidak terdeteksi otomatis. Cek manual dengan 'ip addr' "
+                    "(Termux) atau 'ipconfig' (Windows) untuk tahu alamat yang dipakai "
+                    "device lain."
+                )
+            logger.warning(
+                "  → dashboard ini TIDAK punya password. Siapa pun di jaringan/WiFi yang "
+                "sama bisa membuka Settings. Kunci ke 127.0.0.1 di Settings → Jaringan "
+                "kalau jaringan ini tidak dipercaya."
+            )
 
         try:
             await asyncio.gather(*[s._serve() for s in servers_to_run])

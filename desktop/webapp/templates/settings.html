@@ -106,11 +106,20 @@
     <em>opsional</em> — untuk pemakaian normal cukup matikan dan andalkan koneksi XiaoZhi di atas.
   </div>
 
+  <div class="banner" id="lan-access-hint" style="display:none">
+    <span id="lan-access-hint-text"></span>
+  </div>
+
   <div class="field-row">
     <div class="field-group">
       <label class="field-label">Dashboard host</label>
       <input type="text" data-path="network.dashboard_host" value="{{ cfg.network.dashboard_host }}">
-      <div class="field-hint">127.0.0.1 = lokal saja</div>
+      <div class="field-hint">
+        <code>0.0.0.0</code> = bisa diakses dari device lain di jaringan yang sama (default) ·
+        <code>127.0.0.1</code> = hanya dari device ini sendiri.
+        ⚠️ Dashboard ini <strong>tidak punya password</strong> — kalau diset <code>0.0.0.0</code>,
+        siapa pun yang konek ke WiFi/hotspot yang sama bisa membuka Settings ini.
+      </div>
     </div>
     <div class="field-group">
       <label class="field-label">Dashboard port</label>

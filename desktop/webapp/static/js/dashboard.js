@@ -120,12 +120,45 @@ async function refreshSignalStrip() {
     if (sidebarDot)   sidebarDot.style.background = connected ? "var(--signal)" : hasError ? "var(--red)" : "var(--text-faint)";
     if (sidebarLabel) sidebarLabel.textContent = `XiaoZhi: ${STATUS_LABEL[xz.status] || "—"}`;
 
+    // Sidebar footer: tampilkan alamat yang sedang dipakai untuk akses dashboard ini
+    const sidebarFooter = document.getElementById("sidebar-footer");
+    if (sidebarFooter) {
+      const host = s.network?.dashboard_host;
+      const port = s.network?.dashboard_port;
+      if (host === "0.0.0.0" || host === "::") {
+        sidebarFooter.textContent = s.lan_ip ? `${s.lan_ip}:${port} (LAN)` : `0.0.0.0:${port} (LAN)`;
+      } else {
+        sidebarFooter.textContent = `${host || "127.0.0.1"}:${port || ""}`;
+      }
+    }
+
     // Settings page inline status
     const settingsPill = document.getElementById("settings-conn-pill");
     const settingsDot  = settingsPill?.querySelector(".pill-dot");
     const settingsText = document.getElementById("settings-conn-text");
     applyPillStatus(settingsPill, settingsDot, settingsText, xz.status);
     setText("settings-conn-url", xz.wss_url || "");
+
+    // Kotak info akses LAN (halaman Settings)
+    const lanHint = document.getElementById("lan-access-hint");
+    const lanHintText = document.getElementById("lan-access-hint-text");
+    if (lanHint && lanHintText) {
+      const host = s.network?.dashboard_host;
+      const port = s.network?.dashboard_port;
+      if (host === "0.0.0.0" || host === "::") {
+        lanHint.style.display = "flex";
+        lanHint.className = "banner";
+        lanHintText.innerHTML = s.lan_ip
+          ? `📡 Bisa diakses dari device lain di jaringan yang sama: <strong>http://${s.lan_ip}:${port}</strong>`
+          : `📡 Dashboard dengar di semua interface, tapi IP LAN tidak terdeteksi otomatis. Cek manual dengan <code>ipconfig</code> (Windows) / <code>ip addr</code> (Linux/Termux).`;
+      } else if (host && host !== "127.0.0.1" && host !== "localhost") {
+        lanHint.style.display = "flex";
+        lanHint.className = "banner";
+        lanHintText.innerHTML = `📡 Dashboard dibind ke <strong>${host}:${port}</strong> — buka dari device lain pakai alamat itu.`;
+      } else {
+        lanHint.style.display = "none";
+      }
+    }
 
   } catch (_) { /* dashboard tetap tampil walau poll gagal sesaat */ }
 }

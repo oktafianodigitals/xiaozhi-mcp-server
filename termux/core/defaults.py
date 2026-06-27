@@ -5,7 +5,7 @@ core/defaults.py  — skema konfigurasi default.
 DEFAULT_CONFIG = {
     "meta": {
         "server_name": "xiaozhi-mcp-console",
-        "version": "1.1.0",
+        "version": "1.2.0",
     },
 
     # ── Koneksi keluar ke cloud XiaoZhi ──────────────────────────────────
@@ -26,9 +26,15 @@ DEFAULT_CONFIG = {
         "ping_interval_s": 20,
     },
 
-    # ── Dashboard (UI manajemen, localhost-only) ──────────────────────────
+    # ── Dashboard (UI manajemen) ───────────────────────────────────────────
+    # dashboard_host default "0.0.0.0" → bisa diakses dari device lain di
+    # jaringan yang sama (laptop, HP lain) pakai IP LAN server, bukan cuma
+    # 127.0.0.1. PERHATIAN: dashboard ini TIDAK punya login/password, jadi
+    # siapa pun yang konek ke jaringan/WiFi/hotspot yang sama bisa membuka
+    # Settings. Kalau server ini jalan di jaringan yang tidak dipercaya,
+    # ubah ke "127.0.0.1" supaya hanya bisa diakses dari device ini sendiri.
     "network": {
-        "dashboard_host": "127.0.0.1",
+        "dashboard_host": "0.0.0.0",
         "dashboard_port": 8766,
         # Server MCP inbound (opsional, untuk koneksi lokal/LAN tanpa token)
         "inbound_mcp_enabled": False,

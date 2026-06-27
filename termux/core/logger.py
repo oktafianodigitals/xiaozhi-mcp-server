@@ -79,6 +79,15 @@ def setup_logging(level: str = "INFO") -> None:
     # uvicorn access log cukup berisik untuk dashboard kecil, turunkan levelnya
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
+    # httpx/httpcore log URL request LENGKAP di level INFO (termasuk token
+    # Telegram bot yang ada di URL, contoh: api.telegram.org/bot<TOKEN>/...).
+    # Log ini masuk ke logs/app.log DAN ke RingBufferHandler yang dibaca
+    # halaman Logs dashboard — sekarang dashboard bisa diakses dari LAN,
+    # jadi token itu bisa leak ke siapa pun yang buka halaman Logs.
+    # Turunkan ke WARNING supaya request normal tidak ikut tercatat.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)

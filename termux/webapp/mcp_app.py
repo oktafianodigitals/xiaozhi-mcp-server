@@ -6,6 +6,11 @@ WebSocket MCP. Ini yang dibuka ke jaringan luar (mcp_host, biasanya
 0.0.0.0) supaya backend cloud XiaoZhi bisa konek. Dashboard (settings UI)
 TIDAK ada di app ini, jadi walau port ini diekspos ke internet, tidak ada
 permukaan untuk mengubah setting tanpa otentikasi.
+
+Catatan: dashboard (webapp/dashboard_app.py) sendiri sekarang juga default
+dengar di 0.0.0.0 (bukan localhost-only) supaya bisa diakses dari device
+lain di LAN. Beda dengan app ini, dashboard TIDAK punya autentikasi sama
+sekali — jangan port-forward dashboard_port ke internet publik.
 """
 
 from __future__ import annotations

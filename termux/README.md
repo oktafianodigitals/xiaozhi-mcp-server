@@ -1,4 +1,4 @@
-# xiaozhi-mcp-console  v1.1
+# xiaozhi-mcp-console  v1.2
 
 Server Python MCP (Model Context Protocol) yang **connect keluar** ke cloud XiaoZhi lewat WSS permanen. Dashboard web dark-theme untuk mengatur token, URL endpoint, API key tool, dan melihat status koneksi real-time — tanpa perlu menyentuh file config.
 
@@ -9,8 +9,9 @@ Server Python MCP (Model Context Protocol) yang **connect keluar** ke cloud Xiao
   │  XiaozhiClient ──WSS outbound──► wss://api.xiaozhi.me/mcp/ │
   │  (koneksi UTAMA)                  ?token=JWT                │
   │                                                             │
-  │  Dashboard UI   ◄──────────────── http://localhost:8766     │
-  │  (setting, status, logs)                                    │
+  │  Dashboard UI   ◄──────────────── http://<IP-server>:8766   │
+  │  (setting, status, logs)          (default: bisa diakses    │
+  │                                    dari device lain di LAN) │
   └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -35,7 +36,10 @@ cd xiaozhi-mcp-console
 start.bat
 ```
 
-Buka browser: **`http://127.0.0.1:8766`**
+Buka browser: **`http://127.0.0.1:8766`** (dari device yang sama tempat server jalan)
+
+Mau buka dari device lain (laptop, HP lain) di jaringan yang sama? Lihat bagian
+**"Akses Dashboard dari Device Lain (LAN)"** di bawah.
 
 ---
 
@@ -124,7 +128,53 @@ Gelombang beranimasi saat koneksi aktif, berhenti saat disconnected.
 
 ---
 
-## Arsitektur Koneksi
+## Akses Dashboard dari Device Lain (LAN)
+
+Sejak v1.1, dashboard **default mendengarkan di `0.0.0.0`** — artinya selain
+`http://127.0.0.1:8766` dari device tempat server jalan, dashboard juga bisa
+dibuka dari device lain (laptop, HP lain) yang terhubung ke **jaringan/WiFi/
+hotspot yang sama**, lewat IP server.
+
+### Cara pakai
+1. Jalankan server seperti biasa (`./start.sh` atau `start.bat`).
+2. Buka halaman **Settings** dari device tempat server jalan — ada kotak
+   info kuning yang otomatis menunjukkan alamat siap pakai, contoh:
+   `http://192.168.1.23:8766`. Sidebar bagian bawah juga menampilkan alamat
+   ini di semua halaman.
+3. Kalau kotak info bilang "IP tidak terdeteksi", cek manual:
+   - **Termux**: jalankan `ip addr show wlan0` (atau `ifconfig`), cari IP
+     yang formatnya `192.168.x.x` / `10.x.x.x`.
+   - **Windows**: jalankan `ipconfig`, cari **IPv4 Address** di adapter
+     WiFi/Ethernet yang aktif.
+4. Dari device lain, buka `http://<IP-tadi>:8766` di browser — pastikan
+   kedua device terhubung ke jaringan yang sama.
+
+### ⚠️ Tidak ada password
+Dashboard ini **tidak punya sistem login/autentikasi sama sekali**. Setiap
+orang yang bisa konek ke jaringan yang sama (termasuk tamu yang numpang
+WiFi/hotspot) otomatis bisa membuka Settings, melihat status, dan mengubah
+token/API key/tool yang aktif. Token dan API key memang dimasking di UI
+(`eyJhbG...gSSMMQ`), tapi siapa pun dengan akses ke dashboard tetap bisa
+**menggantinya** dengan token miliknya sendiri.
+
+Kalau jaringan tempat server ini berjalan tidak sepenuhnya dipercaya
+(WiFi publik, kos-kosan/kantor dengan banyak orang asing, dst):
+- Buka **Settings → Jaringan → Dashboard host**, ubah jadi `127.0.0.1`,
+  klik **Simpan setting jaringan**, lalu **Restart listener sekarang** —
+  dashboard kembali localhost-only.
+- **Jangan pernah** port-forward `dashboard_port` (default 8766) ke
+  internet publik dalam keadaan apa pun — fitur LAN ini hanya untuk
+  jaringan lokal yang dipercaya, bukan untuk diekspos ke internet.
+
+### Kenapa MCP inbound server beda?
+Listener MCP inbound (`network.inbound_mcp_*`, opsional, dibahas di bagian
+**Arsitektur Koneksi**) sengaja dipisah ke app FastAPI lain yang sama sekali
+tidak punya halaman Settings — jadi walau port itu diekspos lebih luas,
+tetap tidak ada cara mengubah konfigurasi tanpa otentikasi lewatnya.
+Dashboard (port 8766) adalah satu-satunya tempat setting bisa diubah, jadi
+proteksinya murni bergantung pada siapa yang punya akses ke jaringannya.
+
+---
 
 ```
 Internet
@@ -198,6 +248,7 @@ xiaozhi-mcp-console/
 ├── core/
 │   ├── config.py                    # ConfigManager (JSON, atomic write, masking)
 │   ├── defaults.py                  # Skema config default (termasuk xiaozhi.*)
+│   ├── netinfo.py                   # Deteksi IP LAN (untuk info akses dashboard)
 │   ├── logger.py                    # Logging: file + console + RingBuffer
 │   └── state.py                     # RuntimeState + XiaozhiConnectionState
 │
@@ -241,6 +292,7 @@ xiaozhi-mcp-console/
 | Status "Token belum diatur" | Buka Settings, isi token JWT dari console XiaoZhi |
 | Status "error" terus | Cek token belum expired di console XiaoZhi; kalau expired, perbarui token |
 | Dashboard tidak terbuka | Pastikan port 8766 tidak dipakai proses lain (`lsof -i:8766` / `netstat -ano`) |
+| Tidak bisa diakses dari device lain | Pastikan `network.dashboard_host` = `0.0.0.0` (Settings → Jaringan), kedua device di WiFi yang sama, dan router tidak mengaktifkan "AP/Client Isolation" (umum di WiFi tamu/publik — matikan di setting router atau pakai hotspot HP biasa) |
 | Termux: server mati saat HP lock | Jalankan `termux-wake-lock` dulu, gunakan `tmux` untuk session persisten |
 | Windows: `python` tidak dikenal | Install Python dari python.org, centang "Add to PATH" |
 
